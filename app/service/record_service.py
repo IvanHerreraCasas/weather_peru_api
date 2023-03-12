@@ -2,9 +2,14 @@ import os
 
 from flask import current_app
 from datetime import date
+from sqlalchemy import select
+
+from typing import Optional
 
 from app.database import db
 from app.models import Record
+
+from app.service.station_service import get_station_by_name, get_available_stations
 
 
 def save_records_from_file(station, path):
@@ -48,3 +53,58 @@ def save_records_file(name, file_contents):
 def save_records(records):
     db.session.bulk_save_objects(records)
     db.session.commit()
+
+
+def get_statistical_record(start_date: date = None, end_date: date = None,
+                           stat_type: str = None, parameter: str = None,
+                           region: str = None, province: str = None,
+                           district: str = None, station_name: str = None) \
+        -> tuple[Optional[Record], str]:
+    if parameter not in ["max_temp", "min_temp", "precipitation"]:
+        return None, "Parameter can only be max_temp, min_temp or precipitation"
+
+    if stat_type not in ["max", "min"]:
+        return None, "Statistical type can only be max or min"
+
+    if start_date is None:
+        start_date = date(1950, 1, 1)
+
+    if end_date is None:
+        end_date = date(2050, 1, 1)
+
+    station_names: list[str] = []
+
+    if station_name is not None:
+        station = get_station_by_name(station_name)
+        if station is None:
+            return None, f"{station_name} station does not exist"
+        station_names.append(station_name)
+    else:
+        stations = get_available_stations(region, province, district)
+        for station in stations:
+            station_names.append(station.name)
+
+    param = None
+
+    if parameter == "max_temp":
+        param = Record.max_temp
+    elif parameter == "min_temp":
+        param = Record.min_temp
+    elif parameter == "precipitation":
+        param = Record.precipitation
+
+    record: Optional[Record] = None
+
+    stmt = select(Record)\
+        .where(Record.station_name.in_(station_names))\
+        .where(Record.date >= start_date)\
+        .where(Record.date <= end_date).where(param.isnot(None))
+
+    if stat_type == "max":
+        stmt = stmt.order_by(param.desc())
+    elif stat_type == "min":
+        stmt = stmt.order_by(param.asc())
+
+    record = db.session.execute(stmt).first()[0]
+
+    return record, ''
