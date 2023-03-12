@@ -6,3 +6,9 @@
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+
+# Migrations
+/migrations
+
+# records files
+/uploads
