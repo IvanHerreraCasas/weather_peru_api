@@ -9,4 +9,4 @@ class Record(db.Model):
     precipitation = db.Column(db.Float, nullable=True)
     min_temp = db.Column(db.Float, nullable=True)
     max_temp = db.Column(db.Float, nullable=True)
-    station_id = db.Column(db.Integer, db.ForeignKey('stations.id'), nullable=False)
+    station_name = db.Column(db.String(30), db.ForeignKey('stations.name'), nullable=False)

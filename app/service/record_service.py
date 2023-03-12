@@ -24,7 +24,7 @@ def save_records_from_file(station, path):
                 precipitation=precipitation,
                 max_temp=max_temp,
                 min_temp=min_temp,
-                station_id=station.id
+                station_name=station.name
             )
             records.append(record)
     save_records(records)
