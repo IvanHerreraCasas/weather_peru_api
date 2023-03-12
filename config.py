@@ -8,6 +8,7 @@ class Config(object):
     DEBUG = False
     TESTING = False
     SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
+    UPLOAD_FOLDER = 'uploads'
 
 
 class ProductionConfig(Config):
