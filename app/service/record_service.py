@@ -2,7 +2,7 @@ import os
 
 from flask import current_app
 from datetime import date
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from typing import Optional
 
@@ -95,9 +95,9 @@ def get_statistical_record(start_date: date = None, end_date: date = None,
 
     record: Optional[Record] = None
 
-    stmt = select(Record)\
-        .where(Record.station_name.in_(station_names))\
-        .where(Record.date >= start_date)\
+    stmt = select(Record) \
+        .where(Record.station_name.in_(station_names)) \
+        .where(Record.date >= start_date) \
         .where(Record.date <= end_date).where(param.isnot(None))
 
     if stat_type == "max":
@@ -108,3 +108,54 @@ def get_statistical_record(start_date: date = None, end_date: date = None,
     record = db.session.execute(stmt).first()[0]
 
     return record, ''
+
+
+def get_statistical_value(start_date: date = None, end_date: date = None,
+                          stat_type: str = None, parameter: str = None,
+                          region: str = None, province: str = None,
+                          district: str = None, station_name: str = None) \
+        -> tuple[Optional[int], str]:
+    if parameter not in ["max_temp", "min_temp", "precipitation"]:
+        return None, "Parameter can only be max_temp, min_temp or precipitation"
+
+    if stat_type not in ["average"]:
+        return None, "Statistical type can only be average"
+
+    if start_date is None:
+        start_date = date(1950, 1, 1)
+
+    if end_date is None:
+        end_date = date(2050, 1, 1)
+
+    station_names: list[str] = []
+
+    if station_name is not None:
+        station = get_station_by_name(station_name)
+        if station is None:
+            return None, f"{station_name} station does not exist"
+        station_names.append(station_name)
+    else:
+        stations = get_available_stations(region, province, district)
+        for station in stations:
+            station_names.append(station.name)
+
+    param = None
+
+    if parameter == "max_temp":
+        param = Record.max_temp
+    elif parameter == "min_temp":
+        param = Record.min_temp
+    elif parameter == "precipitation":
+        param = Record.precipitation
+
+    stmt = None
+
+    if stat_type == "average":
+        stmt = select(func.avg(param)) \
+            .where(Record.station_name.in_(station_names)) \
+            .where(Record.date >= start_date) \
+            .where(Record.date <= end_date).where(param.isnot(None))
+
+    value = db.session.execute(stmt).scalar()
+
+    return value, ''
