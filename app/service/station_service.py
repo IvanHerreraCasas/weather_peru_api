@@ -32,8 +32,13 @@ def get_station(station_id):
     return station
 
 
-def get_available_stations(region, province, district):
+def get_station_by_name(name):
+    station = db.session.query(Station).filter_by(name=name).first()
 
+    return station
+
+
+def get_available_stations(region, province, district):
     filters = []
 
     if region is not None:
@@ -48,6 +53,3 @@ def get_available_stations(region, province, district):
     stations = db.session.query(Station).where(and_(*filters)).all()
 
     return stations
-
-
-
