@@ -1,4 +1,5 @@
-from app import db
+from app.database import db
+
 
 class Station(db.Model):
     __tablename__ = 'stations'
@@ -8,3 +9,12 @@ class Station(db.Model):
     region = db.Column(db.String(30), nullable=False)
     province = db.Column(db.String(30), nullable=False)
     district = db.Column(db.String(30), nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'region': self.region,
+            'province': self.province,
+            'district': self.district
+        }
