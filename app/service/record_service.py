@@ -2,9 +2,9 @@ import os
 
 from flask import current_app
 from datetime import date
-from sqlalchemy import select, func
+from sqlalchemy import select, func, Select
 
-from typing import Optional
+from typing import Optional, List
 
 from app.database import db
 from app.models import Record
@@ -59,53 +59,30 @@ def get_statistical_record(start_date: date = None, end_date: date = None,
                            stat_type: str = None, parameter: str = None,
                            region: str = None, province: str = None,
                            district: str = None, station_name: str = None) \
-        -> tuple[Optional[Record], str]:
+        -> tuple[Optional[List[Record]], str]:
     if parameter not in ["max_temp", "min_temp", "precipitation"]:
         return None, "Parameter can only be max_temp, min_temp or precipitation"
 
     if stat_type not in ["max", "min"]:
         return None, "Statistical type can only be max or min"
 
-    if start_date is None:
-        start_date = date(1950, 1, 1)
-
-    if end_date is None:
-        end_date = date(2050, 1, 1)
-
-    station_names: list[str] = []
-
     if station_name is not None:
         station = get_station_by_name(station_name)
         if station is None:
             return None, f"{station_name} station does not exist"
-        station_names.append(station_name)
-    else:
-        stations = get_available_stations(region, province, district)
-        for station in stations:
-            station_names.append(station.name)
 
-    param = None
-
-    if parameter == "max_temp":
-        param = Record.max_temp
-    elif parameter == "min_temp":
-        param = Record.min_temp
-    elif parameter == "precipitation":
-        param = Record.precipitation
+    record_column = get_record_column_from_parameter(parameter)
 
     record: Optional[Record] = None
 
-    stmt = select(Record) \
-        .where(Record.station_name.in_(station_names)) \
-        .where(Record.date >= start_date) \
-        .where(Record.date <= end_date).where(param.isnot(None))
+    stmt = create_select_stmt(Record, start_date, end_date, parameter, region, province, district, station_name)
 
     if stat_type == "max":
-        stmt = stmt.order_by(param.desc())
+        stmt = stmt.order_by(record_column.desc())
     elif stat_type == "min":
-        stmt = stmt.order_by(param.asc())
+        stmt = stmt.order_by(record_column.asc())
 
-    record = db.session.execute(stmt).first()[0]
+    record = db.session.execute(stmt).scalar()
 
     return record, ''
 
@@ -121,6 +98,34 @@ def get_statistical_value(start_date: date = None, end_date: date = None,
     if stat_type not in ["average"]:
         return None, "Statistical type can only be average"
 
+    if station_name is not None:
+        station = get_station_by_name(station_name)
+        if station is None:
+            return None, f"{station_name} station does not exist"
+
+    record_column = get_record_column_from_parameter(parameter)
+
+    stmt = None
+
+    if stat_type == "average":
+        stmt = create_select_stmt(func.avg(record_column),
+                                  start_date,
+                                  end_date,
+                                  parameter,
+                                  region,
+                                  province,
+                                  district,
+                                  station_name)
+
+    value = db.session.execute(stmt).scalar()
+
+    return value, ''
+
+
+def create_select_stmt(selectable=Record, start_date: date = None,
+                       end_date: date = None, parameter: str = None,
+                       region: str = None, province: str = None,
+                       district: str = None, station_name: str = None) -> Select:
     if start_date is None:
         start_date = date(1950, 1, 1)
 
@@ -130,32 +135,28 @@ def get_statistical_value(start_date: date = None, end_date: date = None,
     station_names: list[str] = []
 
     if station_name is not None:
-        station = get_station_by_name(station_name)
-        if station is None:
-            return None, f"{station_name} station does not exist"
         station_names.append(station_name)
     else:
         stations = get_available_stations(region, province, district)
         for station in stations:
             station_names.append(station.name)
 
-    param = None
+    stmt = select(selectable) \
+        .where(Record.station_name.in_(station_names)) \
+        .where(Record.date >= start_date) \
+        .where(Record.date <= end_date)
 
+    record_column = get_record_column_from_parameter(parameter)
+
+    if record_column is not None:
+        stmt = stmt.where(record_column.isnot(None))
+    return stmt
+
+
+def get_record_column_from_parameter(parameter: str):
     if parameter == "max_temp":
-        param = Record.max_temp
+        return Record.max_temp
     elif parameter == "min_temp":
-        param = Record.min_temp
+        return Record.min_temp
     elif parameter == "precipitation":
-        param = Record.precipitation
-
-    stmt = None
-
-    if stat_type == "average":
-        stmt = select(func.avg(param)) \
-            .where(Record.station_name.in_(station_names)) \
-            .where(Record.date >= start_date) \
-            .where(Record.date <= end_date).where(param.isnot(None))
-
-    value = db.session.execute(stmt).scalar()
-
-    return value, ''
+        return Record.precipitation
