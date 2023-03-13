@@ -7,7 +7,7 @@ from app.resources.statistics_resource import StatisticRecordsResource, Statisti
 api = Api()
 
 api.add_resource(StationsResource, '/stations')
-api.add_resource(RecordsResource, '/records/<station_id>')
+api.add_resource(RecordsResource, '/records')
 api.add_resource(StatisticRecordsResource, '/statistic/records')
 api.add_resource(StatisticValueResource, '/statistic/value')
 
