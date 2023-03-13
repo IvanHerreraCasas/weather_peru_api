@@ -55,6 +55,18 @@ def save_records(records):
     db.session.commit()
 
 
+def get_records(record_id: int = None, start_date: date = None, end_date: date = None,
+                parameter: str = None, region: str = None, province: str = None,
+                district: str = None, station_name: str = None) -> List[Record]:
+    if record_id is not None:
+        stmt = select(Record).where(Record.id == record_id)
+    else:
+        stmt = create_select_stmt(Record, start_date, end_date, parameter, region, province, district, station_name)
+
+    records = db.session.execute(stmt).scalars()
+    return records
+
+
 def get_statistical_record(start_date: date = None, end_date: date = None,
                            stat_type: str = None, parameter: str = None,
                            region: str = None, province: str = None,
