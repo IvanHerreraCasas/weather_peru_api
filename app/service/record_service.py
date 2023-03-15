@@ -71,7 +71,7 @@ def get_statistical_record(start_date: date = None, end_date: date = None,
                            stat_type: str = None, parameter: str = None,
                            region: str = None, province: str = None,
                            district: str = None, station_name: str = None) \
-        -> tuple[Optional[List[Record]], str]:
+        -> tuple[Optional[Record], str]:
     if parameter not in ["max_temp", "min_temp", "precipitation"]:
         return None, "Parameter can only be max_temp, min_temp or precipitation"
 
