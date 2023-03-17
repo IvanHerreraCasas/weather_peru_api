@@ -26,7 +26,6 @@ class StatisticRecordsResource(Resource):
             station = get_station_by_name(record.station_name)
             return jsonify({
                     'record': record.to_dict(),
-                    'station': station.to_dict()
                 })
 
         return {'message': error}, 400
