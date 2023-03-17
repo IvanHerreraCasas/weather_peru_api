@@ -16,14 +16,16 @@ class AskResource(Resource):
 
         natural_question = params.get('question')
 
-        question_instructions = '''        
-The topic of the conversation is weather records just from Peru, so remember all the regions, provinces and districts from Peru.
-        
-You are going to analyze a question in natural language and identify which function will answer it (there are 3), 
-then you have to identify which parameters the question provides, and output the result according to the following 
-vocabulary. 
+        question_instructions = '''
+Your goal will be to analyze a question provided in natural language about weather records from Peru, to identify which function could answer it (there are only 3).
 
-question:
+To archive your goal, you must:
+ 
+- Remember all the regions, provinces and districts from Peru.
+
+- Know the available functions and parameters that can be associated with a question, which are in JSON format:
+
+####
 
 function 1:
 {
@@ -68,18 +70,28 @@ error:
     error[mandatory]: ,
 }
 
-Notice that in the above vocabulary each function has a name an its corresponding parameters, this parameters can be mandatory or optional (specified between '[]'), if the question does not provide a value for a mandatory parameter output an error, and for an optional parameter you can set it to null, also notice that some parameters can have only take some values which are specified between '()'.
+####
 
-Notice also that station names does not include the word station, e.g ...in Miraflores station (station_name='Miraflores')
+Here notice that:
 
-Also be careful and don't confuse cities from other countries with the regions, provinces, and districts from Peru. 
+* In the above vocabulary each function has a name an its corresponding parameters, this parameters can be mandatory or optional (specified between '[]').
 
-Finally if you receive an off-topic question, output an error.
+* To difference of [optional] parameters, [mandatory] parameters cannot be null, so if necessary you must output an {error: }
+
+* Some parameters can only take some values which are specified between '()'.
+
+* Station names does not include the word station, e.g ...in Miraflores station (station_name='Miraflores')
+
+* You must be careful and don't confuse cities from other countries with the regions, provinces, and districts from Peru. 
+
+* If you receive an off-topic question, output an error.
        
 Rules: 
 
+    - Your output must be only in JSON format, the same of the functions and error that I provided to you above.
     - NEVER answer in natural language, just in JSON; if you can't do it, output an error in JSON explaining why.
-    - All messages should start with '{' and end with '}'
+    - Don't add context or explanation to your JSON response.
+    - All messages must start with '{' and end with '}'
 '''
 
         answer_instructions = '''
@@ -119,6 +131,7 @@ Just show the natural language answer, don't explain it.
 
             completion_answer = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
+                temperature=0,
                 messages=[
                     {'role': "system", 'content': answer_instructions},
                     {'role': "user", 'content': json.dumps(json_answer)}
