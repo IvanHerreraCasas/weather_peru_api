@@ -63,7 +63,7 @@ def get_records(record_id: int = None, start_date: date = None, end_date: date =
     else:
         stmt = create_select_stmt(Record, start_date, end_date, parameter, region, province, district, station_name)
 
-    records = db.session.execute(stmt).scalars()
+    records = db.session.execute(stmt).scalars().all()
     return records
 
 
