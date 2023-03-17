@@ -166,8 +166,8 @@ def execute_function_from_question(function_name: str, function_parameters: dict
 
     if function_name == 'get_weather_record':
 
-        date = function_parameters['date']
-        station_name = function_parameters['station_name']
+        date = function_parameters.get('date')
+        station_name = function_parameters.get('station_name')
 
         records = get_records(
             start_date=datetime.strptime(date, '%Y-%m-%d') if date is not None else None,
@@ -175,16 +175,16 @@ def execute_function_from_question(function_name: str, function_parameters: dict
             station_name=station_name
         )
 
-        return records[0].to_dict()
+        return records[0].to_dict() if records else None
     elif function_name == 'get_statistical_record':
 
-        start_date = function_parameters['start_date']
-        end_date = function_parameters['end_date']
-        stat_type = function_parameters['stat_type']
-        parameter = function_parameters['parameter']
-        region = function_parameters['region']
-        province = function_parameters['province']
-        district = function_parameters['district']
+        start_date = function_parameters.get('start_date')
+        end_date = function_parameters.get('end_date')
+        stat_type = function_parameters.get('stat_type')
+        parameter = function_parameters.get('parameter')
+        region = function_parameters.get('region')
+        province = function_parameters.get('province')
+        district = function_parameters.get('district')
 
         record, error = get_statistical_record(
             start_date=datetime.strptime(start_date, '%Y-%m-%d') if start_date is not None else None,
@@ -196,17 +196,17 @@ def execute_function_from_question(function_name: str, function_parameters: dict
             district=district
         )
 
-        return record.to_dict()
+        return record.to_dict() if record is not None else None
 
     elif function_name == 'get_statistical_value':
 
-        start_date = function_parameters['start_date']
-        end_date = function_parameters['end_date']
-        stat_type = function_parameters['stat_type']
-        parameter = function_parameters['parameter']
-        region = function_parameters['region']
-        province = function_parameters['province']
-        district = function_parameters['district']
+        start_date = function_parameters.get('start_date')
+        end_date = function_parameters.get('end_date')
+        stat_type = function_parameters.get('stat_type')
+        parameter = function_parameters.get('parameter')
+        region = function_parameters.get('region')
+        province = function_parameters.get('province')
+        district = function_parameters.get('district')
 
         value, error = get_statistical_value(
             start_date=datetime.strptime(start_date, '%Y-%m-%d') if start_date is not None else None,
